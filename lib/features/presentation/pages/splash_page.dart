@@ -12,9 +12,8 @@ class SplashPage extends StatefulWidget {
 class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 5), () {
       // Navigate to the home page after the splash screen
       context.goNamed("home");
     });
@@ -43,7 +42,7 @@ class _SplashPageState extends State<SplashPage> {
               const SizedBox(height: 15),
               const Text(
                 AppTextString.splashTitle,
-                style: TextStyle(fontSize: 21, color: Colors.white),
+                style: TextStyle(fontSize: 18, color: Colors.white),
               ),
             ],
           ),
