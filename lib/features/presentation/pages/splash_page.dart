@@ -1,4 +1,5 @@
 import 'package:cv_d_project/core/config/utils/text_string.dart';
+import 'package:cv_d_project/core/theme/colors_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,11 +25,7 @@ class _SplashPageState extends State<SplashPage> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xff9ebb7b), Colors.lightBlue],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomRight,
-          ),
+          gradient: ColorsTheme.gradient,
         ),
         child: Center(
           child: Column(

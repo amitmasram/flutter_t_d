@@ -1,3 +1,24 @@
+
+
+// user_event.dart
+abstract class UserEvent {}
+
+class LoadUsers extends UserEvent {}
+
+class ToggleUserSelection extends UserEvent {
+  final int index;
+  ToggleUserSelection(this.index);
+}
+
+class SelectAllUsers extends UserEvent {}
+
+class ResetSelections extends UserEvent {}
+
+class DeleteSelectedUsers extends UserEvent {}
+
+class SubmitSelectedUsers extends UserEvent {}
+
+
 // part of 'users_bloc.dart';
 
 // @immutable

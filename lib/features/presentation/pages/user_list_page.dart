@@ -1,53 +1,34 @@
-import 'package:cv_d_project/features/data/repositories/api_serverce.dart';
+import 'package:cv_d_project/core/config/utils/text_string.dart';
+import 'package:cv_d_project/core/theme/colors_theme.dart';
+import 'package:cv_d_project/features/presentation/bloc/users_bloc.dart';
+import 'package:cv_d_project/features/presentation/bloc/users_state.dart';
+import 'package:cv_d_project/features/presentation/bloc/users_event.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class UserListPage extends StatefulWidget {
+class UserListPage extends StatelessWidget {
   const UserListPage({super.key});
 
-  @override
-  State<UserListPage> createState() => _UserListPageState();
-}
-
-class _UserListPageState extends State<UserListPage> {
-  bool isSelected = false;
-  bool isSelectedAll = false;
-  bool isReset = false;
-  bool isSubmit = false;
-
-  List<bool> isonlyselected = List.generate(20, (index) => false);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xff9ebb7b), Colors.lightBlue],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: ColorsTheme.gradient),
         ),
         title: const Text(
-          'Available Users',
+          AppTextString.appbartitle,
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
-      body: FutureBuilder(
-        future: ApiServerce().getUsers(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(
-              color: Colors.lightBlue,
-            ));
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No users found'));
-          }
+      body: BlocBuilder<UserBloc, UserState>(
+        builder: (context, state) {
+          final users = state.users;
 
-          final users = snapshot.data!;
+          if (users.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
           return Column(
             children: [
@@ -63,21 +44,22 @@ class _UserListPageState extends State<UserListPage> {
                           child: Checkbox(
                             activeColor: Colors.green,
                             checkColor: Colors.white,
-                            side: const BorderSide(color: Colors.green, width: 2.0),
-                            value: isSelected,
+                            side: const BorderSide(
+                              color: Colors.green,
+                              width: 2.0,
+                            ),
+                            value: state.allSelected,
                             onChanged: (value) {
-                              setState(() {
-                                isSelected = value!;
-                                isSelectedAll = value;
-                                for (int i = 0; i < isonlyselected.length; i++) {
-                                  isonlyselected[i] = value;
-                                }
-                              });
+                              if (value == true) {
+                                context.read<UserBloc>().add(SelectAllUsers());
+                              } else {
+                                context.read<UserBloc>().add(ResetSelections());
+                              }
                             },
                           ),
                         ),
                         const Text(
-                          'Select all',
+                          AppTextString.selectall,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w400,
@@ -85,52 +67,47 @@ class _UserListPageState extends State<UserListPage> {
                         ),
                       ],
                     ),
-
-                    const SizedBox(width: 10),
                     InkWell(
                       onTap: () {
-                        setState(() {
-                          isonlyselected = List.generate(20, (index) => false);
-                          isSelected = false;
-                          isSelectedAll = false;
-                        });
+                        context.read<UserBloc>().add(DeleteSelectedUsers());
                       },
-                      child: Icon(Icons.delete, color: Colors.red, size: 30),
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                        size: 30,
+                      ),
                     ),
                   ],
                 ),
               ),
-
               Expanded(
                 child: ListView.builder(
                   itemCount: users.length,
                   itemBuilder: (context, index) {
+                    final user = users[index];
                     return Padding(
-                      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: InkWell(
                         onTap: () {
-                          setState(() {
-                            isonlyselected[index] = !isonlyselected[index];
-                          });
+                          context.read<UserBloc>().add(
+                            ToggleUserSelection(index),
+                          );
                         },
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.only(left: 10.0, right: 10.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
                           height: 60,
-                          width: double.infinity,
                           decoration: BoxDecoration(
                             color:
-                                isonlyselected[index]
+                                user.isSelected
                                     ? Colors.green.withOpacity(0.2)
-                                    : Color(0xfff2f2f2),
+                                    : const Color(0xfff2f2f2),
                             borderRadius: BorderRadius.circular(3),
-                            shape: BoxShape.rectangle,
                             border:
-                                isonlyselected[index]
+                                user.isSelected
                                     ? Border.all(
                                       color: Colors.green.shade300,
                                       width: 2.0,
-                                      style: BorderStyle.solid,
                                       strokeAlign: BorderSide.strokeAlignInside,
                                     )
                                     : null,
@@ -138,28 +115,28 @@ class _UserListPageState extends State<UserListPage> {
                           child: Row(
                             children: [
                               Icon(
-                                isonlyselected[index] ? Icons.check_sharp : null,
+                                user.isSelected ? Icons.check_sharp : null,
                                 size: 27,
                                 color:
-                                    isonlyselected[index]
+                                    user.isSelected
                                         ? Colors.green.shade400
                                         : Colors.grey,
                               ),
                               const SizedBox(width: 10),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                   Text(
-                                    users[index].name.toString(),
-                                    style: TextStyle(
+                                  Text(
+                                    user.name,
+                                    style: const TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
-                                   Text(
-                                    users[index].email.toString(),
-                                    style: TextStyle(
+                                  Text(
+                                    user.email,
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -174,36 +151,28 @@ class _UserListPageState extends State<UserListPage> {
                   },
                 ),
               ),
-
               Padding(
-                padding: EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                   children: [
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          setState(() {
-                            isonlyselected = List.generate(20, (index) => false);
-                          });
+                          context.read<UserBloc>().add(ResetSelections());
                         },
                         child: Container(
                           height: 50,
-                          width: double.infinity,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-
                             border: Border.all(
                               color: Colors.lightBlue,
                               width: 2.0,
-                              style: BorderStyle.solid,
                               strokeAlign: BorderSide.strokeAlignInside,
                             ),
                           ),
-                          child: Center(
+                          child: const Center(
                             child: Text(
-                              "Reset",
+                              AppTextString.reset,
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.lightBlue,
@@ -217,17 +186,28 @@ class _UserListPageState extends State<UserListPage> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          context.read<UserBloc>().add(SubmitSelectedUsers());
+                          showAboutDialog(
+                            context: context,
+                            children: [
+                              Center(
+                                child: const Text(
+                                  'Users submitted successfully',
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                         child: Container(
                           height: 50,
-                          width: double.infinity,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                             color: Colors.lightBlue,
                           ),
-                          child: Center(
+                          child: const Center(
                             child: Text(
-                              "Submit Users",
+                              AppTextString.submitusers,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
@@ -243,7 +223,7 @@ class _UserListPageState extends State<UserListPage> {
               ),
             ],
           );
-        }
+        },
       ),
     );
   }
